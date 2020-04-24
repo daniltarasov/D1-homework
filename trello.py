@@ -4,12 +4,12 @@ from datetime import datetime
 
 # Данные авторизации в API Trello
 auth_params = {
-    'key': "ВАШ KEY",
-    'token': "ВАШ TOKEN", }
+    'key': "178c242295ef2c0e7ed695f668de086b",
+    'token': "30ce91698f443b2c6dc5d208b11e35c9fe2d6d34037b662dcba4af49f4c314a2", }
 # Адрес, на котором расположен API Trello, # Именно туда мы будем отправлять HTTP запросы.
 base_url = "https://api.trello.com/1/{}"
 
-board_id = "ВАШ ID"
+board_id = "1Z998Nir"
 
 
 def read():
@@ -76,7 +76,7 @@ def move(name, column_name):
             choice = int(input("Выберете порядковый номер из списка: "))
             # Перемещаем задачу с выбранным id
             move_selected_task(task_list[choice - 1]['id'], column_name)
-        except IndexError:
+        except (IndexError, ValueError):
             print("Неправильный номер. Попробуйте еще раз")
             move(name, column_name)
 
