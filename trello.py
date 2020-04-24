@@ -45,6 +45,8 @@ def create(name, column_name):
     if not column_is_exist:
         create_list(column_name)
         create(name, column_name)
+    read()
+
 
 def move(name, column_name):
     # Список всех задач с именем name в исходных колонках и количество одноименных задач в целевой колонке
@@ -64,14 +66,19 @@ def move(name, column_name):
         print('Найдено больше одной задачи с именем "{}".'.format(name))
         n = 1
         for task in task_list:
-            print('{}. Колонка "{}". ID {}. Дата последней активности {}.'.format(n, task['list_name'], task['id'], task['time']))
+            print('{}. Колонка "{}". ID {}. Дата последней активности {}.'.format(n, task['list_name'], task['id'],
+                                                                                  task['time']))
             n += 1
         if already_have:
             print('В колонке "{}" уже есть {} одноименные задачи.'.format(column_name, already_have))
         print("")
-        choice = int(input("Выберете порядковый номер из списка: "))
-        # Перемещаем задачу с выбранным id
-        move_selected_task(task_list[choice - 1]['id'], column_name)
+        try:
+            choice = int(input("Выберете порядковый номер из списка: "))
+            # Перемещаем задачу с выбранным id
+            move_selected_task(task_list[choice - 1]['id'], column_name)
+        except IndexError:
+            print("Неправильный номер. Попробуйте еще раз")
+            move(name, column_name)
 
 
 def find_all_tasks(name, column_name):
@@ -116,6 +123,7 @@ def move_selected_task(task_id, column_name):
     if not column_is_exist:
         create_list(column_name)
         move_selected_task(task_id, column_name)
+    read()
 
 
 # Создание колонки
@@ -135,7 +143,6 @@ def create_list(name):
         print("Новая колонка создана")
 
 
-
 # Переименование колонки
 def rename_list(name, new_name):
     column_data = requests.get(base_url.format('boards') + '/' + board_id + '/lists', params=auth_params).json()
@@ -144,7 +151,6 @@ def rename_list(name, new_name):
             # Переименовываем колонку
             requests.put(base_url.format('lists') + '/' + column["id"], data={'name': new_name, **auth_params})
             break
-    read()
 
 
 # Удаление колонки
@@ -156,7 +162,6 @@ def delete_list(name):
             requests.put(base_url.format('lists') + '/' + column["id"] + "/closed",
                          data={'value': 'true', **auth_params})
             break
-    read()
 
 
 if __name__ == "__main__":
