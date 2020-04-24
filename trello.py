@@ -103,12 +103,19 @@ def move_selected_task(task_id, column_name):
     # Теперь, когда у нас есть id задачи, которую мы хотим переместить
     # Переберём данные обо всех колонках, пока не найдём ту, в которую мы будем перемещать задачу
     column_data = requests.get(base_url.format('boards') + '/' + board_id + '/lists', params=auth_params).json()
+    # есть ли колонка column_name
+    column_is_exist = False
     for column in column_data:
         if column['name'] == column_name:
             # И выполним запрос к API для перемещения задачи в нужную колонку
             requests.put(base_url.format('cards') + '/' + task_id + '/idList',
                          data={'value': column['id'], **auth_params})
+            column_is_exist = True
             break
+    # Если колонки нет, создаем ее и вызываем create заново
+    if not column_is_exist:
+        create_list(column_name)
+        move_selected_task(task_id, column_name)
 
 
 # Создание колонки
