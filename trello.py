@@ -26,45 +26,57 @@ def read():
             print('\t' + 'Нет задач!')
             continue
         for task in task_data:
-            print('\t' + task['name'])
+            print('\t' + task['name'] + '   ' + " ID: {}".format(task['id']))
 
 
 def create(name, column_name):
     # Получим данные всех колонок на доске
     column_data = requests.get(base_url.format('boards') + '/' + board_id + '/lists', params=auth_params).json()
+    # есть ли колонка column_name
+    column_is_exist = False
     # Переберём данные обо всех колонках, пока не найдём ту колонку, которая нам нужна
     for column in column_data:
         if column['name'] == column_name:
             # Создадим задачу с именем _name_ в найденной колонке
             requests.post(base_url.format('cards'), data={'name': name, 'idList': column['id'], **auth_params})
+            column_is_exist = True
             break
-
+    # Если колонки нет, создаем ее и вызываем create заново
+    if not column_is_exist:
+        create_list(column_name)
+        create(name, column_name)
 
 def move(name, column_name):
     # Список всех задач с именем name в исходных колонках и количество одноименных задач в целевой колонке
     task_list, already_have = find_all_tasks(name, column_name)
-
-    if len(task_list) == 1:
+    # Если задачи для перемещения не найдены, информируем об этом
+    if len(task_list) == 0:
+        print("Нет задач для перемещения.")
         # Если в целевой колонке уже есть одноименные задачи, информируем об этом
         if already_have:
-            print('В колонке "{}" уже есть {} одноименные задачи. Перемещаю.'.format(column_name, already_have))
+            print('В колонке "{}" уже есть "{}" одноименные задачи.'.format(column_name, already_have))
+
+    elif len(task_list) == 1:
+        if already_have:
+            print('В колонке "{}" уже есть "{}" одноименные задачи. Перемещаю.'.format(column_name, already_have))
         move_selected_task(task_list[0]['id'], column_name)
     else:
         print('Найдено больше одной задачи с именем "{}".'.format(name))
         n = 1
         for task in task_list:
-            print('{}. Колонка "{}". Дата последней активности {}.'.format(n, task['list_name'], task['time']))
+            print('{}. Колонка "{}". ID {}. Дата последней активности {}.'.format(n, task['list_name'], task['id'], task['time']))
             n += 1
         if already_have:
             print('В колонке "{}" уже есть {} одноименные задачи.'.format(column_name, already_have))
         print("")
-        choice = int(input("Выберете номер из списка: "))
+        choice = int(input("Выберете порядковый номер из списка: "))
         # Перемещаем задачу с выбранным id
         move_selected_task(task_list[choice - 1]['id'], column_name)
 
 
 def find_all_tasks(name, column_name):
-    # Составляем список всех одноименных задач
+    # Составляем список всех одноименных задач в исходных колонках
+    # и считаем количество одноименных задач в целевой колонке
     all_cards = requests.get(base_url.format('boards') + '/' + board_id + '/cards', params=auth_params).json()
     duplicated_cards = []
     already_have = 0  # Количество одноименных задач в целевой колонке
@@ -72,7 +84,8 @@ def find_all_tasks(name, column_name):
         if card['name'] == name:
             # узнаем, в какой колонке задача
             card_list = requests.get(base_url.format('cards') + '/' + card['id'] + '/list', params=auth_params).json()
-            if card_list["name"] == column_name:  # если задача в целевой колонке, учитываем ее, но для выбора она будет недоступна
+            if card_list["name"] == column_name:  # если задача в целевой колонке, учитываем ее,
+                # но для выбора она будет недоступна
                 already_have += 1
                 continue
             card_data = {
@@ -112,7 +125,8 @@ def create_list(name):
     else:
         id_board = (requests.get(base_url.format('boards') + '/' + board_id, params=auth_params).json())['id']
         requests.post(base_url.format('lists'), data={'name': name, 'idBoard': id_board, **auth_params})
-        read()
+        print("Новая колонка создана")
+
 
 
 # Переименование колонки
